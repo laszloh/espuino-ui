@@ -6,6 +6,8 @@ import { svelte } from '@sveltejs/vite-plugin-svelte'
 import { viteSingleFile } from "vite-plugin-singlefile"
 import chalk from 'chalk';
 
+const pkg = require("./package.json");
+const target = pkg.proxy;
 
 function buildHeaderFile() {
   let config;
@@ -46,6 +48,21 @@ function buildHeaderFile() {
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  server: {
+    host: "127.0.0.1",
+    port: "3000",
+    proxy: {
+      // proxy all api calls to the espuino
+      "/api": {
+        target: target  // <-- change ip to the espuino
+      },
+      // websocket (if we ever need it)
+      "/ws": {
+        target: target.replace(/^http(s?):\/\//, "ws$1://"),
+        ws: true
+      }
+    }
+  },
   plugins: [
     svelte(),
     viteSingleFile(),
