@@ -1,4 +1,4 @@
-<script>
+<script lang='ts'>
     import {_} from "svelte-i18n";
     import Icon from "../components/Icon.svelte";
     import * as CONSTS from "../constants.js";
@@ -6,10 +6,9 @@
     import EnterWebStreamUrlModal from "../modals/EnterWebStreamUrl.svelte";
     import SelectActionModal from "../modals/SelectAction.svelte";
     import ConfirmRemoveModal from "../modals/ConfirmRemove.svelte";
+    import {currentTag, tags} from "../store";
 
     export let show;
-    export let currentTag = {id: ""};
-    export let tags = [];
 
     let openedModalId = "";
 
@@ -33,19 +32,21 @@
         openedModalId = modal;
     }
 
+    const detected = ($currentTag.id !== undefined && $currentTag.id !== "");
 
     // TODO For tests only, remove
-    currentTag = {id: "12345678", command: 12, pathOrUrl: "/music/short stories/"};
+    // currentTag = {id: "12345678", command: 12, pathOrUrl: "/music/short stories/"};
     // tag = {id: "12345678", command: 103};
     // tag = {id: "12345678"};
     // tag = {id: ""};
 
-    for (let i = 1; i <= 10; i++) {
-        tags.push({id: String(i).padStart(8, '0'), command: 12, pathOrUrl: "/music/short stories/"});
-    }
+    // for (let i = 1; i <= 10; i++) {
+    //     tags.push({id: String(i).padStart(8, '0'), command: 12, pathOrUrl: "/music/short stories/"});
+    // }
 
 </script>
 
+{#await tags.init() then}
 <div class="{show ? 'block' : 'hidden'} max-w-2xl mx-auto sm:h-fit space-y-6 pb-4">
   <!-- CURRENT TAG -->
   <div class="{$$props.class} relative overflow-hidden shadow sm:rounded-md bg-white sm:mx-4 h-full">
@@ -53,7 +54,7 @@
     <div class="relative px-4 py-3 space-y-6">
       <div class="flex flex-col sm:flex-row w-full items-center">
         <div class="py-8 w-48 flex-shrink-0 flex flex-col items-center">
-          {#if currentTag.id !== ""}
+          {#if detected}
             <div class="flex h-24 w-24 relative">
               <Icon name="nfc" style="regular" class="absolute animate-ping h-full w-full text-green-300 opacity-75"/>
               <Icon name="nfc" style="regular" class="absolute h-full w-full text-green-400"/>
@@ -64,23 +65,23 @@
         </div>
 
         <div class="flex flex-col items-center space-y-4 w-full">
-          {#if currentTag.id !== ""}
+          {#if detected}
             <div class="text-green-400 text-lg font-bold">Tag detected</div>
             <table class="text-sm w-full sm:w-fit">
               <tr>
                 <th class="font-medium text-left w-1 align-text-top">ID:</th>
-                <td class="pl-3 font-mono select-all">{currentTag.id}</td>
+                <td class="pl-3 font-mono select-all">{$currentTag.id}</td>
               </tr>
               <tr>
                 <th class="font-medium text-left w-1 align-text-top">Assignment:</th>
                 <td class="pl-3">
-                  {#if "command" in currentTag && (currentTag.command in CONSTS.LOCAL_PLAY_MODES || currentTag.command in CONSTS.ACTIONS || currentTag.command in CONSTS.WEB_STREAM)}
-                    {#if currentTag.command in CONSTS.LOCAL_PLAY_MODES}
-                      {$_(CONSTS.LOCAL_PLAY_MODES[currentTag.command].i18n_key)}
-                    {:else if currentTag.command in CONSTS.ACTIONS}
-                      {$_(CONSTS.ACTIONS[currentTag.command].i18n_key)}
-                    {:else if currentTag.command in CONSTS.WEB_STREAM}
-                      {$_(CONSTS.WEB_STREAM[currentTag.command].i18n_key)}
+                  {#if "command" in $currentTag && ($currentTag.command in CONSTS.LOCAL_PLAY_MODES || $currentTag.command in CONSTS.ACTIONS || $currentTag.command in CONSTS.WEB_STREAM)}
+                    {#if $currentTag.command in CONSTS.LOCAL_PLAY_MODES}
+                      {$_(CONSTS.LOCAL_PLAY_MODES[$currentTag.command].i18n_key)}
+                    {:else if $currentTag.command in CONSTS.ACTIONS}
+                      {$_(CONSTS.ACTIONS[$currentTag.command].i18n_key)}
+                    {:else if $currentTag.command in CONSTS.WEB_STREAM}
+                      {$_(CONSTS.WEB_STREAM[$currentTag.command].i18n_key)}
                     {/if}
                   {:else}
                     {$_("tags.assignment_types.none")}
@@ -90,7 +91,7 @@
               {#if "pathOrUrl" in currentTag}
                 <tr>
                   <th class="font-medium text-left w-1 align-text-top">
-                    {#if currentTag.pathOrUrl.startsWith("/")}
+                    {#if $currentTag.pathOrUrl.startsWith("/")}
                       Path:
                     {:else}
                       URL:
@@ -109,7 +110,7 @@
     </div>
 
     <!-- Buttons -->
-    {#if currentTag.id}
+    {#if detected}
       <div class="flex flex-col sm:flex-row gap-2 px-4 py-3 bg-zinc-50">
         <button class="button button-secondary w-full sm:py-8" on:click={() => openModal("selectPath")}>
           Assign file or directory
@@ -148,7 +149,7 @@
             </tr>
           </thead>
           <tbody>
-            {#each tags as tag}
+            {#each $tags as tag}
               <tr class="h-full border-zinc-300 border-t">
                 <td class="pt-2 sm:pb-2 font-mono w-0 select-all">
                   {tag.id}
@@ -197,7 +198,7 @@
     </div>
   </div>
 </div>
-
+{/await}
 
 <!-- MODALS -->
 <SelectPathModal bind:isOpened={isOpenedSelectPathModal} {selectedPath} />

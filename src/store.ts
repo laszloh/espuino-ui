@@ -1,38 +1,41 @@
-import { writable } from "svelte/store";
+import axios from "axios";
+import { writable, get } from "svelte/store";
 import type { SystemState, PlayerState, Settings, Tag, Tags } from "./types";
+import { defaultSettings } from "./types";
+
+const API_URL = "/api";
 
 // settings store
-export const settings = writable<Settings>({
-  general: {
-    volume_start_percent: 0,
-    volume_max_speaker_percent: 0,
-    volume_max_headphones_percent: 0,
-    led_restart_percent: 0,
-    led_night_percent: 0,
-    power_saving_minutes: 0,
-    battery_warning_voltage: 0,
-    battery_low_voltage: 0,
-    battery_high_voltage: 0,
-    battery_interval_minutes: 0,
-  },
-  wifi: {
-    ssid: "",
-    password: "",
-    hostname: "",
-  },
-  ftp: {
-    enabled: false,
-    username: "",
-    password: "",
-  },
-  mqtt: {
-    enabled: false,
-    host: "",
-    port: 0,
-    username: "",
-    password: "",
-  },
-});
+const API_SETTINGS = "https://run.mocky.io/v3/bbe6b393-b162-473b-b8dc-69e3c1d56844"; // replace with API_URL + "/settings"
+
+function createSettingsStore() {
+  const { subscribe, set } = writable<Settings>(defaultSettings());
+
+  return {
+    subscribe,
+    init: async () => {
+      try {
+        const response = await axios.get(API_SETTINGS);
+        set(response.data);
+      } catch (error) {
+        // TODO: do some error handling here
+        console.log(error);
+      }
+    },
+    set: async (newSett: Settings) => {
+      try {
+        const response = await axios.post(API_SETTINGS, newSett);
+        // no error until here
+        set(response.data);
+      } catch (error) {
+        // TODO: do some error handling here
+        console.log(error);
+      }
+    },
+  };
+}
+
+export const settings = createSettingsStore();
 
 // system state store
 export const systemState = writable<SystemState>();
@@ -41,5 +44,48 @@ export const systemState = writable<SystemState>();
 export const playerState = writable<PlayerState>();
 
 // tag store
-export const currentTag = writable<Tag>();
-export const tags = writable<Tags>();
+export const currentTag = writable<Tag>({
+  id: "",
+  command: 0,
+  pathOrUrl: "",
+});
+
+const API_TAGS = "https://run.mocky.io/v3/1aa45660-c69b-43dc-8a64-c05e211cb803"; // replace with API_URL + "/tags"
+
+function createTagsStore() {
+  const tagsStore = writable<Tags>();
+
+  return {
+    subscribe: tagsStore.subscribe,
+    init: async () => {
+      try {
+        const response = await axios.get(API_TAGS);
+        tagsStore.set(response.data);
+      } catch (error) {
+        // TODO: do some error handling here
+        console.log(error);
+      }
+    },
+    insert: async (tag: Tag) => {
+      try {
+        const newTag = get(tagsStore);
+        const response = await axios.post(API_TAGS, [...newTag, tag]);
+        tagsStore.set(response.data);
+      } catch (error) {
+        // TODO: do some error handling here
+        console.log(error);
+      }
+    },
+    remove: async (tagId: string) => {
+      try {
+        const response = await axios.get(API_TAGS);
+        tagsStore.set(response.data);
+      } catch (error) {
+        // TODO: do some error handling here
+        console.log(error);
+      }
+    },
+  };
+}
+
+export const tags = createTagsStore();

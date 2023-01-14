@@ -6,9 +6,12 @@
     import Control from "./pages/Control.svelte";
     import Settings from "./pages/Settings.svelte";
     import Tags from "./pages/Tags.svelte";
-    import {onMount} from "svelte";
+    import {onDestroy, onMount} from "svelte";
     import axios from "axios";
     import AccessPoint from "./pages/AccessPoint.svelte";
+
+    import {settings, systemState} from './store';
+  import { init } from 'svelte/internal';
 
     // @formatter:off
     const navigationPages = [
@@ -22,16 +25,8 @@
     let current_page = "control";
     let main_area;
 
-    let settings = {
-        wifi: {
-            ssid: "",
-            password: "",
-            hostname: "espuino"
-        }
-    };
-    let isConnected;
+    let isConnected = false;
     let batteryLevel = 57;
-
 
     onMount(() => {
         const sse = new EventSource('/events');
@@ -46,7 +41,9 @@
         }
 
         sse.addEventListener("status", (e) => {
-            e.data // rssi, battery, battery loading status
+            systemState.update((state) => {
+                return {...state, ...e.data};
+            });
         });
 
         sse.addEventListener("tag", (e) => {
@@ -67,35 +64,24 @@
         current_page = event.detail;
     }
 
-    function getSettings(group = undefined) {
-        let endpoint = "https://run.mocky.io/v3/bbe6b393-b162-473b-b8dc-69e3c1d56844"; // TODO replace with "/api/settings"
-        if (group !== undefined) endpoint += `?group=${group}`;
-
-        axios.get(endpoint)
-            .then((response) => {
-                settings = {...settings, ...response.data}; // Update local settings with response data
-            })
-            .catch((error) => {
-                console.log(error) // TODO handle errors
-            })
-    }
-
     function handleWifiSettings(event) {
-        // TODO Send settings to device and reboot
-        settings.wifi = event.detail;
+        const newSett = {...$settings, wifi: event.detail};
+        settings.set(newSett);
     }
 </script>
 
-{#if settings?.wifi?.ssid === "" || settings?.wifi?.ssid === undefined}
-  <AccessPoint settings={settings.wifi} on:wifiSettings={handleWifiSettings}/>
-{:else}
-  <TopNavigation navigationPages={navigationPages} page={current_page} {isConnected} {batteryLevel} on:changePage={changePage}/>
-  <main class="flex flex-col items-center flex-1 h-full overflow-y-auto" bind:this={main_area}>
+<TopNavigation navigationPages={navigationPages} page={current_page} {isConnected} {batteryLevel} on:changePage={changePage}/>
+<main class="flex flex-col items-center flex-1 h-full overflow-y-auto" bind:this={main_area}>
+{#await settings.init() then}
+  {#if $settings?.wifi?.ssid === "" || $settings?.wifi?.ssid === undefined}
+    <AccessPoint settings={$settings.wifi} on:wifiSettings={handleWifiSettings}/>
+  {:else}
     <div class="w-full h-full py-4">
       <Control show={current_page === "control"}/>
       <Tags show={current_page === "tags"}/>
       <Settings show={current_page === "settings"}/>
     </div>
-  </main>
-  <BottomNavigation navigationPages={navigationPages} page={current_page} on:changePage={changePage}/>
-{/if}
+  {/if}
+{/await}
+</main>
+<BottomNavigation navigationPages={navigationPages} page={current_page} on:changePage={changePage}/>

@@ -5,6 +5,4 @@ export interface Tag {
   pathOrUrl: string;
 }
 
-export interface Tags {
-    tags: Tag[];
-}
+export interface Tags extends Array<Tag>{}
