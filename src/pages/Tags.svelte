@@ -6,9 +6,13 @@
     import EnterWebStreamUrlModal from "../modals/EnterWebStreamUrl.svelte";
     import SelectActionModal from "../modals/SelectAction.svelte";
     import ConfirmRemoveModal from "../modals/ConfirmRemove.svelte";
-    import {currentTag, tags} from "../store";
+  import { useCurrentTag, useTagList } from "../api";
+  import { Axios, AxiosError } from "axios";
 
     export let show;
+
+    const tagList = useTagList();
+    const currentTag = useCurrentTag();
 
     let openedModalId = "";
 
@@ -32,7 +36,7 @@
         openedModalId = modal;
     }
 
-    const detected = ($currentTag.id !== undefined && $currentTag.id !== "");
+    const detected = ($currentTag.data.id !== undefined && $currentTag.data.id !== "");
 
     // TODO For tests only, remove
     // currentTag = {id: "12345678", command: 12, pathOrUrl: "/music/short stories/"};
@@ -46,7 +50,7 @@
 
 </script>
 
-{#await tags.init() then}
+{#if $tagList.data}
 <div class="{show ? 'block' : 'hidden'} max-w-2xl mx-auto sm:h-fit space-y-6 pb-4">
   <!-- CURRENT TAG -->
   <div class="{$$props.class} relative overflow-hidden shadow sm:rounded-md bg-white sm:mx-4 h-full">
@@ -70,17 +74,17 @@
             <table class="text-sm w-full sm:w-fit">
               <tr>
                 <th class="font-medium text-left w-1 align-text-top">ID:</th>
-                <td class="pl-3 font-mono select-all">{$currentTag.id}</td>
+                <td class="pl-3 font-mono select-all">{$currentTag.data?.id}</td>
               </tr>
               <tr>
                 <th class="font-medium text-left w-1 align-text-top">Assignment:</th>
                 <td class="pl-3">
-                  {#if "command" in $currentTag && ($currentTag.command in CONSTS.LOCAL_PLAY_MODES || $currentTag.command in CONSTS.ACTIONS || $currentTag.command in CONSTS.WEB_STREAM)}
-                    {#if $currentTag.command in CONSTS.LOCAL_PLAY_MODES}
+                  {#if "command" in $currentTag && ($currentTag.data?.command in CONSTS.LOCAL_PLAY_MODES || $currentTag.data?.command in CONSTS.ACTIONS || $currentTag.data?.command in CONSTS.WEB_STREAM)}
+                    {#if $currentTag.data?.command in CONSTS.LOCAL_PLAY_MODES}
                       {$_(CONSTS.LOCAL_PLAY_MODES[$currentTag.command].i18n_key)}
-                    {:else if $currentTag.command in CONSTS.ACTIONS}
+                    {:else if $currentTag.data?.command in CONSTS.ACTIONS}
                       {$_(CONSTS.ACTIONS[$currentTag.command].i18n_key)}
-                    {:else if $currentTag.command in CONSTS.WEB_STREAM}
+                    {:else if $currentTag.data?.command in CONSTS.WEB_STREAM}
                       {$_(CONSTS.WEB_STREAM[$currentTag.command].i18n_key)}
                     {/if}
                   {:else}
@@ -91,7 +95,7 @@
               {#if "pathOrUrl" in currentTag}
                 <tr>
                   <th class="font-medium text-left w-1 align-text-top">
-                    {#if $currentTag.pathOrUrl.startsWith("/")}
+                    {#if $currentTag.data?.pathOrUrl.startsWith("/")}
                       Path:
                     {:else}
                       URL:
@@ -149,7 +153,7 @@
             </tr>
           </thead>
           <tbody>
-            {#each $tags as tag}
+            {#each $tagList.data as tag}
               <tr class="h-full border-zinc-300 border-t">
                 <td class="pt-2 sm:pb-2 font-mono w-0 select-all">
                   {tag.id}
@@ -198,7 +202,11 @@
     </div>
   </div>
 </div>
-{/await}
+{:else if $tagList.isError}
+<span>
+  This is an error
+</span>
+{/if}
 
 <!-- MODALS -->
 <SelectPathModal bind:isOpened={isOpenedSelectPathModal} {selectedPath} />
