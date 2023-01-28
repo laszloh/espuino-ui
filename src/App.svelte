@@ -1,12 +1,7 @@
 <script lang="ts">
     import { _ } from "svelte-i18n";
     import { onMount } from "svelte";
-    import {
-        MutationCache,
-        QueryCache,
-        QueryClient,
-        QueryClientProvider,
-    } from "@sveltestack/svelte-query";
+    import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from "@sveltestack/svelte-query";
     import type { AxiosError } from "axios";
     import toast, { Toaster } from "svelte-french-toast";
 
@@ -16,12 +11,7 @@
     import Settings from "./pages/Settings.svelte";
     import Tags from "./pages/Tags.svelte";
     import AccessPoint from "./pages/AccessPoint.svelte";
-    import {
-        extractErrorMessage,
-        invalidateSystemQueries,
-        useSystemSettings,
-        useUpdateSystemSettings,
-    } from "./api";
+    import { extractErrorMessage, invalidateSystemQueries, useSystemSettings, useUpdateSystemSettings } from "./api";
 
     // @formatter:off
     const navigationPages = [
@@ -41,7 +31,7 @@
     const queryClient = new QueryClient({
         defaultOptions: {
             queries: {
-                staleTime: 15 * 1000,
+                staleTime: 1 * 1000,
             },
         },
         queryCache: new QueryCache({
@@ -57,11 +47,7 @@
                     if (error.code === "ECONNABORTED") {
                         // the server went away and we are really sad now :'(
                         isConnected = false;
-                    } else
-                        message = extractErrorMessage(
-                            error,
-                            "Something went wrong"
-                        );
+                    } else message = extractErrorMessage(error, "Something went wrong");
                     toast.error(message);
                 }
             },
@@ -74,7 +60,6 @@
                 toast.success("Update successful");
             },
             onError: (error: AxiosError<{ message?: string }>) => {
-                // TODO: Error handling here with snackbar or something similar
                 console.log(error);
                 let message = "Connection to server lost";
                 if (error.code === "ECONNABORTED") {
@@ -152,23 +137,11 @@
 </script>
 
 <QueryClientProvider client={queryClient}>
-    <TopNavigation
-        {navigationPages}
-        page={current_page}
-        {isConnected}
-        {batteryLevel}
-        on:changePage={changePage}
-    />
-    <main
-        class="flex flex-col items-center flex-1 h-full overflow-y-auto"
-        bind:this={main_area}
-    >
+    <TopNavigation {navigationPages} page={current_page} {isConnected} {batteryLevel} on:changePage={changePage} />
+    <main class="flex flex-col items-center flex-1 h-full overflow-y-auto" bind:this={main_area}>
         {#if $systemSettings.data}
             {#if $systemSettings.data?.wifi?.ssid === "" || $systemSettings.data?.wifi?.ssid === undefined}
-                <AccessPoint
-                    settings={$systemSettings.data.wifi}
-                    on:wifiSettings={handleWifiSettings}
-                />
+                <AccessPoint settings={$systemSettings.data.wifi} on:wifiSettings={handleWifiSettings} />
             {:else}
                 <div class="w-full h-full py-4">
                     <Control show={current_page === "control"} />
@@ -178,10 +151,6 @@
             {/if}
         {/if}
     </main>
-    <BottomNavigation
-        {navigationPages}
-        page={current_page}
-        on:changePage={changePage}
-    />
+    <BottomNavigation {navigationPages} page={current_page} on:changePage={changePage} />
     <Toaster />
 </QueryClientProvider>

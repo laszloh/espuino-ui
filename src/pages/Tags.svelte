@@ -1,13 +1,12 @@
-<script lang='ts'>
-    import {_} from "svelte-i18n";
+<script lang="ts">
+    import { _ } from "svelte-i18n";
     import Icon from "../components/Icon.svelte";
     import * as CONSTS from "../constants.js";
     import SelectPathModal from "../modals/SelectPath.svelte";
     import EnterWebStreamUrlModal from "../modals/EnterWebStreamUrl.svelte";
     import SelectActionModal from "../modals/SelectAction.svelte";
     import ConfirmRemoveModal from "../modals/ConfirmRemove.svelte";
-  import { useCurrentTag, useTagList } from "../api";
-  import { Axios, AxiosError } from "axios";
+    import { useCurrentTag, useTagList } from "../api";
 
     export let show;
 
@@ -36,7 +35,7 @@
         openedModalId = modal;
     }
 
-    const detected = ($currentTag.data.id !== undefined && $currentTag.data.id !== "");
+    const detected = $currentTag.data.id !== undefined && $currentTag.data.id !== "";
 
     // TODO For tests only, remove
     // currentTag = {id: "12345678", command: 12, pathOrUrl: "/music/short stories/"};
@@ -47,165 +46,154 @@
     // for (let i = 1; i <= 10; i++) {
     //     tags.push({id: String(i).padStart(8, '0'), command: 12, pathOrUrl: "/music/short stories/"});
     // }
-
 </script>
 
 {#if $tagList.data}
-<div class="{show ? 'block' : 'hidden'} max-w-2xl mx-auto sm:h-fit space-y-6 pb-4">
-  <!-- CURRENT TAG -->
-  <div class="{$$props.class} relative overflow-hidden shadow sm:rounded-md bg-white sm:mx-4 h-full">
-    <Icon name="nfc" style="solid" class="absolute w-40 -right-3 -top-3 text-zinc-50 -rotate-6 hidden sm:block"/>
-    <div class="relative px-4 py-3 space-y-6">
-      <div class="flex flex-col sm:flex-row w-full items-center">
-        <div class="py-8 w-48 flex-shrink-0 flex flex-col items-center">
-          {#if detected}
-            <div class="flex h-24 w-24 relative">
-              <Icon name="nfc" style="regular" class="absolute animate-ping h-full w-full text-green-300 opacity-75"/>
-              <Icon name="nfc" style="regular" class="absolute h-full w-full text-green-400"/>
+    <div class="{show ? 'block' : 'hidden'} max-w-2xl mx-auto sm:h-fit space-y-6 pb-4">
+        <!-- CURRENT TAG -->
+        <div class="{$$props.class} relative overflow-hidden shadow sm:rounded-md bg-white sm:mx-4 h-full">
+            <Icon name="nfc" style="solid" class="absolute w-40 -right-3 -top-3 text-zinc-50 -rotate-6 hidden sm:block" />
+            <div class="relative px-4 py-3 space-y-6">
+                <div class="flex flex-col sm:flex-row w-full items-center">
+                    <div class="py-8 w-48 flex-shrink-0 flex flex-col items-center">
+                        {#if detected}
+                            <div class="flex h-24 w-24 relative">
+                                <Icon name="nfc" style="regular" class="absolute animate-ping h-full w-full text-green-300 opacity-75" />
+                                <Icon name="nfc" style="regular" class="absolute h-full w-full text-green-400" />
+                            </div>
+                        {:else}
+                            <Icon name="nfc-slash" style="regular" class="text-red-400 h-24" />
+                        {/if}
+                    </div>
+
+                    <div class="flex flex-col items-center space-y-4 w-full">
+                        {#if detected}
+                            <div class="text-green-400 text-lg font-bold">Tag detected</div>
+                            <table class="text-sm w-full sm:w-fit">
+                                <tr>
+                                    <th class="font-medium text-left w-1 align-text-top">ID:</th>
+                                    <td class="pl-3 font-mono select-all">{$currentTag.data?.id}</td>
+                                </tr>
+                                <tr>
+                                    <th class="font-medium text-left w-1 align-text-top">Assignment:</th>
+                                    <td class="pl-3">
+                                        {#if "command" in $currentTag && ($currentTag.data?.command in CONSTS.LOCAL_PLAY_MODES || $currentTag.data?.command in CONSTS.ACTIONS || $currentTag.data?.command in CONSTS.WEB_STREAM)}
+                                            {#if $currentTag.data?.command in CONSTS.LOCAL_PLAY_MODES}
+                                                {$_(CONSTS.LOCAL_PLAY_MODES[$currentTag.command].i18n_key)}
+                                            {:else if $currentTag.data?.command in CONSTS.ACTIONS}
+                                                {$_(CONSTS.ACTIONS[$currentTag.command].i18n_key)}
+                                            {:else if $currentTag.data?.command in CONSTS.WEB_STREAM}
+                                                {$_(CONSTS.WEB_STREAM[$currentTag.command].i18n_key)}
+                                            {/if}
+                                        {:else}
+                                            {$_("tags.assignment_types.none")}
+                                        {/if}
+                                    </td>
+                                </tr>
+                                {#if "pathOrUrl" in currentTag}
+                                    <tr>
+                                        <th class="font-medium text-left w-1 align-text-top">
+                                            {#if $currentTag.data?.pathOrUrl.startsWith("/")}
+                                                Path:
+                                            {:else}
+                                                URL:
+                                            {/if}
+                                        </th>
+                                        <td class="pl-3 select-all break-all select-all">{currentTag.pathOrUrl}</td>
+                                    </tr>
+                                {/if}
+                            </table>
+                        {:else}
+                            <div class="text-red-400 text-lg font-bold">No Tag detected</div>
+                            <div class="text-sm">Please place a tag on the ESPuino.</div>
+                        {/if}
+                    </div>
+                </div>
             </div>
-          {:else}
-            <Icon name="nfc-slash" style="regular" class="text-red-400 h-24"/>
-          {/if}
+
+            <!-- Buttons -->
+            {#if detected}
+                <div class="flex flex-col sm:flex-row gap-2 px-4 py-3 bg-zinc-50">
+                    <button class="button button-secondary w-full sm:py-8" on:click={() => openModal("selectPath")}> Assign file or directory </button>
+                    <button class="button button-secondary w-full sm:py-8" on:click={() => openModal("enterWebStreamUrl")}> Assign web stream </button>
+                    <button class="button button-secondary w-full sm:py-8" on:click={() => openModal("selectAction")}> Assign action </button>
+                    {#if "command" in currentTag}
+                        <button class="button button-warning w-full sm:py-8" on:click={() => openModal("confirmRemove")}> Remove assignment </button>
+                    {/if}
+                </div>
+            {/if}
         </div>
 
-        <div class="flex flex-col items-center space-y-4 w-full">
-          {#if detected}
-            <div class="text-green-400 text-lg font-bold">Tag detected</div>
-            <table class="text-sm w-full sm:w-fit">
-              <tr>
-                <th class="font-medium text-left w-1 align-text-top">ID:</th>
-                <td class="pl-3 font-mono select-all">{$currentTag.data?.id}</td>
-              </tr>
-              <tr>
-                <th class="font-medium text-left w-1 align-text-top">Assignment:</th>
-                <td class="pl-3">
-                  {#if "command" in $currentTag && ($currentTag.data?.command in CONSTS.LOCAL_PLAY_MODES || $currentTag.data?.command in CONSTS.ACTIONS || $currentTag.data?.command in CONSTS.WEB_STREAM)}
-                    {#if $currentTag.data?.command in CONSTS.LOCAL_PLAY_MODES}
-                      {$_(CONSTS.LOCAL_PLAY_MODES[$currentTag.command].i18n_key)}
-                    {:else if $currentTag.data?.command in CONSTS.ACTIONS}
-                      {$_(CONSTS.ACTIONS[$currentTag.command].i18n_key)}
-                    {:else if $currentTag.data?.command in CONSTS.WEB_STREAM}
-                      {$_(CONSTS.WEB_STREAM[$currentTag.command].i18n_key)}
-                    {/if}
-                  {:else}
-                    {$_("tags.assignment_types.none")}
-                  {/if}
-                </td>
-              </tr>
-              {#if "pathOrUrl" in currentTag}
-                <tr>
-                  <th class="font-medium text-left w-1 align-text-top">
-                    {#if $currentTag.data?.pathOrUrl.startsWith("/")}
-                      Path:
-                    {:else}
-                      URL:
-                    {/if}
-                  </th>
-                  <td class="pl-3 select-all break-all select-all">{currentTag.pathOrUrl}</td>
-                </tr>
-              {/if}
-            </table>
-          {:else}
-            <div class="text-red-400 text-lg font-bold">No Tag detected</div>
-            <div class="text-sm">Please place a tag on the ESPuino.</div>
-          {/if}
+        <!-- TAG LIST -->
+        <div class="relative overflow-hidden shadow sm:rounded-md bg-white sm:mx-4 h-full">
+            <Icon name="list" style="solid" class="absolute w-40 -right-3 -top-3 text-zinc-50 -rotate-6 hidden sm:block" />
+            <div class="relative px-4 pt-5 pb-1 space-y-6">
+                <div>
+                    <h3 class="relative text-lg font-medium leading-6">Assigned playback tags</h3>
+                    <p class="relative mt-1 text-sm text-zinc-500">This is a list of tags with playback assignments for quick reference or manual triggering.</p>
+                </div>
+                <div>
+                    <table class="w-full text-sm text-left h-full">
+                        <thead>
+                            <tr>
+                                <th class="font-medium">ID</th>
+                                <th class="pl-5 font-medium">Playback options</th>
+                                <th class="pl-5 font-medium hidden sm:table-cell">Path / URL</th>
+                                <th /><!-- Space for buttons -->
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {#each $tagList.data as tag}
+                                <tr class="h-full border-zinc-300 border-t">
+                                    <td class="pt-2 sm:pb-2 font-mono w-0 select-all">
+                                        {tag.id}
+                                    </td>
+                                    <td class="pt-2 sm:pb-2 pl-5 ">
+                                        <!--{tag.command}-->
+                                        <div class="flex flex-row h-full w-fit rounded-md overflow-hidden">
+                                            <Icon class="my-auto h-8 w-8 bg-orange-500 px-2 py-1 text-white" name="book-bookmark" style="regular" />
+                                            <Icon class="my-auto h-8 w-8 bg-zinc-100 px-2 py-1 text-zinc-400" name="shuffle" style="regular" />
+                                            <Icon class="my-auto h-8 w-8 bg-orange-500 px-2 py-1 text-white" name="repeat" style="regular" />
+                                            <Icon class="my-auto h-8 w-8 bg-zinc-100 px-2 py-1 text-zinc-400" name="arrow-right-to-line" style="regular" />
+                                            <Icon class="my-auto h-8 w-8 bg-zinc-100 px-2 py-1 text-zinc-400" name="snooze" style="regular" />
+                                            <Icon class="my-auto h-8 w-8 bg-zinc-100 px-2 py-1 text-zinc-400" name="brightness-low" style="regular" />
+                                        </div>
+                                    </td>
+                                    <td class="pt-2 sm:pb-2 px-5 w-full hidden sm:table-cell text-zinc-500 break-all select-all font-mono text-xs">
+                                        {tag.pathOrUrl}
+                                    </td>
+                                    <td class="pt-2 sm:pb-2 w-0">
+                                        <button class="button button-secondary max-h-8 w-12">
+                                            <Icon class="h-5 w-5 text-white" name="play" style="solid" />
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr class="sm:hidden">
+                                    <td colspan="3" class="pb-2">
+                                        <span class="font-medium">Path / URL: </span><span class="text-zinc-500 break-all select-all font-mono text-xs">{tag.pathOrUrl}</span>
+                                    </td>
+                                </tr>
+                            {/each}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div class="px-4 py-3 bg-zinc-100 flex gap-x-2 flex-row sm:gap-x-2 sm:gap-y-0 sm:justify-end">
+                <button class="button button-secondary w-full sm:w-fit">
+                    <Icon class="h-3 pr-2" style="solid" name="chevron-left" />
+                    Previous
+                </button>
+                <button class="button button-secondary w-full sm:w-fit">
+                    Next
+                    <Icon class="h-3 pl-2" style="solid" name="chevron-right" />
+                </button>
+            </div>
         </div>
-      </div>
     </div>
-
-    <!-- Buttons -->
-    {#if detected}
-      <div class="flex flex-col sm:flex-row gap-2 px-4 py-3 bg-zinc-50">
-        <button class="button button-secondary w-full sm:py-8" on:click={() => openModal("selectPath")}>
-          Assign file or directory
-        </button>
-        <button class="button button-secondary w-full sm:py-8" on:click={() => openModal("enterWebStreamUrl")}>
-          Assign web stream
-        </button>
-        <button class="button button-secondary w-full sm:py-8" on:click={() => openModal("selectAction")}>
-          Assign action
-        </button>
-        {#if "command" in currentTag}
-          <button class="button button-warning w-full sm:py-8" on:click={() => openModal("confirmRemove")}>
-            Remove assignment
-          </button>
-        {/if}
-      </div>
-    {/if}
-  </div>
-
-  <!-- TAG LIST -->
-  <div class="relative overflow-hidden shadow sm:rounded-md bg-white sm:mx-4 h-full">
-    <Icon name="list" style="solid" class="absolute w-40 -right-3 -top-3 text-zinc-50 -rotate-6 hidden sm:block"/>
-    <div class="relative px-4 pt-5 pb-1 space-y-6">
-      <div>
-        <h3 class="relative text-lg font-medium leading-6">Assigned playback tags</h3>
-        <p class="relative mt-1 text-sm text-zinc-500">This is a list of tags with playback assignments for quick reference or manual triggering.</p>
-      </div>
-      <div>
-        <table class="w-full text-sm text-left h-full">
-          <thead>
-            <tr>
-              <th class="font-medium">ID</th>
-              <th class="pl-5 font-medium">Playback options</th>
-              <th class="pl-5 font-medium hidden sm:table-cell">Path / URL</th>
-              <th></th><!-- Space for buttons -->
-            </tr>
-          </thead>
-          <tbody>
-            {#each $tagList.data as tag}
-              <tr class="h-full border-zinc-300 border-t">
-                <td class="pt-2 sm:pb-2 font-mono w-0 select-all">
-                  {tag.id}
-                </td>
-                <td class="pt-2 sm:pb-2 pl-5 ">
-                  <!--{tag.command}-->
-                  <div class="flex flex-row h-full w-fit rounded-md overflow-hidden">
-                    <Icon class="my-auto h-8 w-8 bg-orange-500 px-2 py-1 text-white" name="book-bookmark" style="regular"/>
-                    <Icon class="my-auto h-8 w-8 bg-zinc-100 px-2 py-1 text-zinc-400" name="shuffle" style="regular"/>
-                    <Icon class="my-auto h-8 w-8 bg-orange-500 px-2 py-1 text-white" name="repeat" style="regular"/>
-                    <Icon class="my-auto h-8 w-8 bg-zinc-100 px-2 py-1 text-zinc-400" name="arrow-right-to-line" style="regular"/>
-                    <Icon class="my-auto h-8 w-8 bg-zinc-100 px-2 py-1 text-zinc-400" name="snooze" style="regular"/>
-                    <Icon class="my-auto h-8 w-8 bg-zinc-100 px-2 py-1 text-zinc-400" name="brightness-low" style="regular"/>
-                  </div>
-                </td>
-                <td class="pt-2 sm:pb-2 px-5 w-full hidden sm:table-cell text-zinc-500 break-all select-all font-mono text-xs">
-                  {tag.pathOrUrl}
-                </td>
-                <td class="pt-2 sm:pb-2 w-0">
-                  <button class="button button-secondary max-h-8 w-12">
-                    <Icon class="h-5 w-5 text-white" name="play" style="solid"/>
-                  </button>
-                </td>
-              </tr>
-              <tr class="sm:hidden">
-                <td colspan="3" class="pb-2">
-                  <span class="font-medium">Path / URL: </span><span class="text-zinc-500 break-all select-all font-mono text-xs">{tag.pathOrUrl}</span>
-                </td>
-              </tr>
-            {/each}
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Pagination -->
-    <div
-        class="px-4 py-3 bg-zinc-100 flex gap-x-2 flex-row sm:gap-x-2 sm:gap-y-0 sm:justify-end">
-      <button class="button button-secondary w-full sm:w-fit">
-        <Icon class="h-3 pr-2" style="solid" name="chevron-left"/>
-        Previous </button>
-      <button class="button button-secondary w-full sm:w-fit">
-        Next
-        <Icon class="h-3 pl-2" style="solid" name="chevron-right"/>
-      </button>
-    </div>
-  </div>
-</div>
 {:else if $tagList.isError}
-<span>
-  This is an error
-</span>
+    <span> This is an error </span>
 {/if}
 
 <!-- MODALS -->
