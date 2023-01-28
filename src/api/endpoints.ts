@@ -7,49 +7,61 @@ export const ACCESS_TOKEN = "access_token";
 export const WEB_SOCKET_ROOT = calculateWebSocketRoot(WS_BASE_URL);
 
 export const AXIOS = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 5 * 1000,    // 5 seconds connection timeout
-  headers: {
-    "Content-Type": "application/json",
-  },
-  transformRequest: [
-    (data, headers) => {
-      if (headers) {
-        if (localStorage.getItem(ACCESS_TOKEN)) {
-          headers.Authorization = "Bearer " + localStorage.getItem(ACCESS_TOKEN);
-        }
-        if (headers["Content-Type"] !== "application/json") {
-          return data;
-        }
-      }
-      return JSON.stringify(data);
+    baseURL: API_BASE_URL,
+    timeout: 5 * 1000, // 5 seconds connection timeout
+    headers: {
+        "Content-Type": "application/json",
     },
-  ],
+    transformRequest: [
+        (data, headers) => {
+            if (headers) {
+                if (localStorage.getItem(ACCESS_TOKEN)) {
+                    headers.Authorization =
+                        "Bearer " + localStorage.getItem(ACCESS_TOKEN);
+                }
+                if (headers["Content-Type"] !== "application/json") {
+                    return data;
+                }
+            }
+            return JSON.stringify(data);
+        },
+    ],
 });
 
-export const extractErrorMessage = (error: AxiosError<{ message?: string }>, defaultMessage: string) => {
-  return (error?.response?.data?.message ? error.response.data.message : error.message) || defaultMessage;
+export const extractErrorMessage = (
+    error: AxiosError<{ message?: string }>,
+    defaultMessage: string
+) => {
+    return (
+        (error?.response?.data?.message
+            ? error.response.data.message
+            : error.message) || defaultMessage
+    );
 };
 
 function calculateWebSocketRoot(webSocketPath: string) {
-  const location = window.location;
-  const webProtocol = location.protocol === "https:" ? "wss:" : "ws:";
-  return webProtocol + "//" + location.host + webSocketPath;
+    const location = window.location;
+    const webProtocol = location.protocol === "https:" ? "wss:" : "ws:";
+    return webProtocol + "//" + location.host + webSocketPath;
 }
 
 export interface FileUploadConfig {
-  cancelToken?: CancelToken;
-  onUploadProgress?: (progressEvent: ProgressEvent) => void;
+    cancelToken?: CancelToken;
+    onUploadProgress?: (progressEvent: ProgressEvent) => void;
 }
 
-export const uploadFile = (url: string, file: File, config?: FileUploadConfig): AxiosPromise<void> => {
-  const formData = new FormData();
-  formData.append("file", file);
+export const uploadFile = (
+    url: string,
+    file: File,
+    config?: FileUploadConfig
+): AxiosPromise<void> => {
+    const formData = new FormData();
+    formData.append("file", file);
 
-  return AXIOS.post(url, formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-    ...(config || {}),
-  });
+    return AXIOS.post(url, formData, {
+        headers: {
+            "Content-Type": "multipart/form-data",
+        },
+        ...(config || {}),
+    });
 };
