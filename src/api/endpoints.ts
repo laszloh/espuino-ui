@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import type { AxiosPromise, CancelToken } from "axios";
 
 export const WS_BASE_URL = "/ws/";
@@ -26,6 +26,10 @@ export const AXIOS = axios.create({
     },
   ],
 });
+
+export const extractErrorMessage = (error: AxiosError<{ message?: string }>, defaultMessage: string) => {
+  return (error?.response?.data?.message ? error.response.data.message : error.message) || defaultMessage;
+};
 
 function calculateWebSocketRoot(webSocketPath: string) {
   const location = window.location;

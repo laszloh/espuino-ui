@@ -1,8 +1,9 @@
 <script lang="ts">
     import {_} from 'svelte-i18n';
     import {onMount} from "svelte";
-    import { MutationCache, QueryCache, QueryClient, QueryClientProvider, useQueryClient } from '@sveltestack/svelte-query'
+    import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@sveltestack/svelte-query'
     import type { AxiosError } from 'axios';
+    import toast, {Toaster} from 'svelte-french-toast'
 
     import TopNavigation from "./components/NavigationTop.svelte";
     import BottomNavigation from "./components/NavigationBottom.svelte";
@@ -10,7 +11,7 @@
     import Settings from "./pages/Settings.svelte";
     import Tags from "./pages/Tags.svelte";    
     import AccessPoint from "./pages/AccessPoint.svelte";
-    import { invalidateSystemQueries, useSystemSettings, useUpdateSystemSettings } from './api';
+    import { extractErrorMessage, invalidateSystemQueries, useSystemSettings, useUpdateSystemSettings } from './api';
 
     // @formatter:off
     const navigationPages = [
@@ -42,15 +43,12 @@
           // which indicates a failed background update
           if (query.state.data !== undefined) {
             console.log(error);
+            let message = "Connection to server lost";
             if(error.code === 'ECONNABORTED'){
-              isConnected = false;
               // the server went away and we are really sad now :'(
-              // TODO: fill out the error message with a user friendly text
-              // const message = extractErrorMessage(error, "Something went wrong");
-            } else {
-              // const message = extractErrorMessage(error, "Something went wrong");
-            }
-            // enqueueSnackbar(message, { variant: "error" });
+                isConnected = false;
+            } else message = extractErrorMessage(error, "Something went wrong");
+            toast.error(message);
             }
         },
       }),
@@ -59,14 +57,17 @@
           // TODO: enqueue a successfull message here
           console.log("Update successful");
           isConnected = true;
-          // enqueueSnackbar("Update successful", { variant: "success" });
+          toast.success("Update successful");
         },
         onError: (error: AxiosError<{message?:string}>) => {
           // TODO: Error handling here with snackbar or something similar
           console.log(error);
-          isConnected = false;
-          // const message = extractErrorMessage(error, "Problem saving data");
-          // enqueueSnackbar(message, { variant: "error" });
+          let message = "Connection to server lost";
+            if(error.code === 'ECONNABORTED'){
+              // the server went away and we are really sad now :'(
+                isConnected = false;
+            } else message = extractErrorMessage(error, "Update failed");
+          toast.error(message);
         },
       })
     });
@@ -74,17 +75,35 @@
     const systemSettings = useSystemSettings();
     const updateSystemSettings = useUpdateSystemSettings();
 
-    onMount(() => {
-        const sse = new EventSource('/events');
+    let reconnectFrequencySeconds = 1;
+    let sse;
+
+    const waitFunc = () => { return reconnectFrequencySeconds * 1000 };
+    const tryToSetupFunc = () => {
+        setupEventSource();
+        reconnectFrequencySeconds *= 2;
+        if (reconnectFrequencySeconds >= 64) {
+            reconnectFrequencySeconds = 64;
+        }
+    };
+
+    const reconnectFunc = () => { setTimeout(tryToSetupFunc, waitFunc()) };
+
+    const setupEventSource= ()=> {
+        sse = new EventSource('/events'); 
 
         sse.onopen = (e) => {
+            reconnectFrequencySeconds = 1;
             isConnected = true;
-        }
+        };
 
         sse.onerror = (e) => {
             isConnected = false;
-            // TODO show error message
-        }
+            toast.error("Connection lost...");
+
+            sse.close();
+            reconnectFunc();
+        };
 
         sse.addEventListener("status", (e) => {
           invalidateSystemQueries();
@@ -101,6 +120,10 @@
 
         sse.addEventListener("volume", (e) => {
         });
+    }
+
+    onMount(() => {
+        setupEventSource();
     })
 
     function changePage(event) {
@@ -130,4 +153,5 @@
     {/if}
   </main>
   <BottomNavigation {navigationPages} page={current_page} on:changePage={changePage} />
+  <Toaster />
 </QueryClientProvider>
