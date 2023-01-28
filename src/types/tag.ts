@@ -5,4 +5,10 @@ export interface Tag {
   pathOrUrl: string;
 }
 
-export interface Tags extends Array<Tag>{}
+export interface Tags {
+  tags: Array<Tag>;
+  page: number;
+  per_page: number;
+  total: number;
+  total_pages: number;
+}

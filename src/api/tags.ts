@@ -2,8 +2,8 @@ import { useQuery } from "@sveltestack/svelte-query";
 import type { Tag, Tags } from "../types";
 import { AXIOS } from "./endpoints";
 
-const fetchTagList = async (): Promise<Tags> => {
-    const resp = await AXIOS.get("/tagList");
+const fetchTagList = async (page: number): Promise<Tags> => {
+    const resp = await AXIOS.get("/tagList?page=" + page);
     return resp.data;
 };
 
@@ -12,9 +12,10 @@ const fetchCurrentTag = async (): Promise<Tag> => {
     return resp.data;
 };
 
-export const useTagList = () => {
-    return useQuery(["tag", "list"], fetchTagList, {
+export const useTagList = (page: number) => {
+    return useQuery(["tag", "list", page], () => fetchTagList(page), {
         staleTime: Infinity,
+        keepPreviousData: true,
     });
 };
 

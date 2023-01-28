@@ -10,7 +10,9 @@
 
     export let show;
 
-    const tagList = useTagList();
+    let page = 0;
+
+    $: tagList = useTagList(page);
     const currentTag = useCurrentTag();
 
     let openedModalId = "";
@@ -48,83 +50,83 @@
     // }
 </script>
 
-{#if $tagList.data}
-    <div class="{show ? 'block' : 'hidden'} max-w-2xl mx-auto sm:h-fit space-y-6 pb-4">
-        <!-- CURRENT TAG -->
-        <div class="{$$props.class} relative overflow-hidden shadow sm:rounded-md bg-white sm:mx-4 h-full">
-            <Icon name="nfc" style="solid" class="absolute w-40 -right-3 -top-3 text-zinc-50 -rotate-6 hidden sm:block" />
-            <div class="relative px-4 py-3 space-y-6">
-                <div class="flex flex-col sm:flex-row w-full items-center">
-                    <div class="py-8 w-48 flex-shrink-0 flex flex-col items-center">
-                        {#if detected}
-                            <div class="flex h-24 w-24 relative">
-                                <Icon name="nfc" style="regular" class="absolute animate-ping h-full w-full text-green-300 opacity-75" />
-                                <Icon name="nfc" style="regular" class="absolute h-full w-full text-green-400" />
-                            </div>
-                        {:else}
-                            <Icon name="nfc-slash" style="regular" class="text-red-400 h-24" />
-                        {/if}
-                    </div>
-
-                    <div class="flex flex-col items-center space-y-4 w-full">
-                        {#if detected}
-                            <div class="text-green-400 text-lg font-bold">Tag detected</div>
-                            <table class="text-sm w-full sm:w-fit">
-                                <tr>
-                                    <th class="font-medium text-left w-1 align-text-top">ID:</th>
-                                    <td class="pl-3 font-mono select-all">{$currentTag.data?.id}</td>
-                                </tr>
-                                <tr>
-                                    <th class="font-medium text-left w-1 align-text-top">Assignment:</th>
-                                    <td class="pl-3">
-                                        {#if "command" in $currentTag && ($currentTag.data?.command in CONSTS.LOCAL_PLAY_MODES || $currentTag.data?.command in CONSTS.ACTIONS || $currentTag.data?.command in CONSTS.WEB_STREAM)}
-                                            {#if $currentTag.data?.command in CONSTS.LOCAL_PLAY_MODES}
-                                                {$_(CONSTS.LOCAL_PLAY_MODES[$currentTag.command].i18n_key)}
-                                            {:else if $currentTag.data?.command in CONSTS.ACTIONS}
-                                                {$_(CONSTS.ACTIONS[$currentTag.command].i18n_key)}
-                                            {:else if $currentTag.data?.command in CONSTS.WEB_STREAM}
-                                                {$_(CONSTS.WEB_STREAM[$currentTag.command].i18n_key)}
-                                            {/if}
-                                        {:else}
-                                            {$_("tags.assignment_types.none")}
-                                        {/if}
-                                    </td>
-                                </tr>
-                                {#if "pathOrUrl" in currentTag}
-                                    <tr>
-                                        <th class="font-medium text-left w-1 align-text-top">
-                                            {#if $currentTag.data?.pathOrUrl.startsWith("/")}
-                                                Path:
-                                            {:else}
-                                                URL:
-                                            {/if}
-                                        </th>
-                                        <td class="pl-3 select-all break-all select-all">{currentTag.pathOrUrl}</td>
-                                    </tr>
-                                {/if}
-                            </table>
-                        {:else}
-                            <div class="text-red-400 text-lg font-bold">No Tag detected</div>
-                            <div class="text-sm">Please place a tag on the ESPuino.</div>
-                        {/if}
-                    </div>
-                </div>
-            </div>
-
-            <!-- Buttons -->
-            {#if detected}
-                <div class="flex flex-col sm:flex-row gap-2 px-4 py-3 bg-zinc-50">
-                    <button class="button button-secondary w-full sm:py-8" on:click={() => openModal("selectPath")}> Assign file or directory </button>
-                    <button class="button button-secondary w-full sm:py-8" on:click={() => openModal("enterWebStreamUrl")}> Assign web stream </button>
-                    <button class="button button-secondary w-full sm:py-8" on:click={() => openModal("selectAction")}> Assign action </button>
-                    {#if "command" in currentTag}
-                        <button class="button button-warning w-full sm:py-8" on:click={() => openModal("confirmRemove")}> Remove assignment </button>
+<div class="{show ? 'block' : 'hidden'} max-w-2xl mx-auto sm:h-fit space-y-6 pb-4">
+    <!-- CURRENT TAG -->
+    <div class="{$$props.class} relative overflow-hidden shadow sm:rounded-md bg-white sm:mx-4 h-full">
+        <Icon name="nfc" style="solid" class="absolute w-40 -right-3 -top-3 text-zinc-50 -rotate-6 hidden sm:block" />
+        <div class="relative px-4 py-3 space-y-6">
+            <div class="flex flex-col sm:flex-row w-full items-center">
+                <div class="py-8 w-48 flex-shrink-0 flex flex-col items-center">
+                    {#if detected}
+                        <div class="flex h-24 w-24 relative">
+                            <Icon name="nfc" style="regular" class="absolute animate-ping h-full w-full text-green-300 opacity-75" />
+                            <Icon name="nfc" style="regular" class="absolute h-full w-full text-green-400" />
+                        </div>
+                    {:else}
+                        <Icon name="nfc-slash" style="regular" class="text-red-400 h-24" />
                     {/if}
                 </div>
-            {/if}
+
+                <div class="flex flex-col items-center space-y-4 w-full">
+                    {#if detected}
+                        <div class="text-green-400 text-lg font-bold">Tag detected</div>
+                        <table class="text-sm w-full sm:w-fit">
+                            <tr>
+                                <th class="font-medium text-left w-1 align-text-top">ID:</th>
+                                <td class="pl-3 font-mono select-all">{$currentTag.data?.id}</td>
+                            </tr>
+                            <tr>
+                                <th class="font-medium text-left w-1 align-text-top">Assignment:</th>
+                                <td class="pl-3">
+                                    {#if "command" in $currentTag && ($currentTag.data?.command in CONSTS.LOCAL_PLAY_MODES || $currentTag.data?.command in CONSTS.ACTIONS || $currentTag.data?.command in CONSTS.WEB_STREAM)}
+                                        {#if $currentTag.data?.command in CONSTS.LOCAL_PLAY_MODES}
+                                            {$_(CONSTS.LOCAL_PLAY_MODES[$currentTag.command].i18n_key)}
+                                        {:else if $currentTag.data?.command in CONSTS.ACTIONS}
+                                            {$_(CONSTS.ACTIONS[$currentTag.command].i18n_key)}
+                                        {:else if $currentTag.data?.command in CONSTS.WEB_STREAM}
+                                            {$_(CONSTS.WEB_STREAM[$currentTag.command].i18n_key)}
+                                        {/if}
+                                    {:else}
+                                        {$_("tags.assignment_types.none")}
+                                    {/if}
+                                </td>
+                            </tr>
+                            {#if "pathOrUrl" in currentTag}
+                                <tr>
+                                    <th class="font-medium text-left w-1 align-text-top">
+                                        {#if $currentTag.data?.pathOrUrl.startsWith("/")}
+                                            Path:
+                                        {:else}
+                                            URL:
+                                        {/if}
+                                    </th>
+                                    <td class="pl-3 select-all break-all select-all">{currentTag.pathOrUrl}</td>
+                                </tr>
+                            {/if}
+                        </table>
+                    {:else}
+                        <div class="text-red-400 text-lg font-bold">No Tag detected</div>
+                        <div class="text-sm">Please place a tag on the ESPuino.</div>
+                    {/if}
+                </div>
+            </div>
         </div>
 
-        <!-- TAG LIST -->
+        <!-- Buttons -->
+        {#if detected}
+            <div class="flex flex-col sm:flex-row gap-2 px-4 py-3 bg-zinc-50">
+                <button class="button button-secondary w-full sm:py-8" on:click={() => openModal("selectPath")}> Assign file or directory </button>
+                <button class="button button-secondary w-full sm:py-8" on:click={() => openModal("enterWebStreamUrl")}> Assign web stream </button>
+                <button class="button button-secondary w-full sm:py-8" on:click={() => openModal("selectAction")}> Assign action </button>
+                {#if "command" in currentTag}
+                    <button class="button button-warning w-full sm:py-8" on:click={() => openModal("confirmRemove")}> Remove assignment </button>
+                {/if}
+            </div>
+        {/if}
+    </div>
+
+    <!-- TAG LIST -->
+    {#if $tagList.data}
         <div class="relative overflow-hidden shadow sm:rounded-md bg-white sm:mx-4 h-full">
             <Icon name="list" style="solid" class="absolute w-40 -right-3 -top-3 text-zinc-50 -rotate-6 hidden sm:block" />
             <div class="relative px-4 pt-5 pb-1 space-y-6">
@@ -143,7 +145,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {#each $tagList.data as tag}
+                            {#each $tagList.data.tags as tag}
                                 <tr class="h-full border-zinc-300 border-t">
                                     <td class="pt-2 sm:pb-2 font-mono w-0 select-all">
                                         {tag.id}
@@ -181,20 +183,39 @@
 
             <!-- Pagination -->
             <div class="px-4 py-3 bg-zinc-100 flex gap-x-2 flex-row sm:gap-x-2 sm:gap-y-0 sm:justify-end">
-                <button class="button button-secondary w-full sm:w-fit">
+                <button
+                    class="button button-secondary w-full sm:w-fit"
+                    on:click={() => {
+                        page = Math.max(page - 1, 0);
+                    }}
+                    disabled={page === 0}
+                >
                     <Icon class="h-3 pr-2" style="solid" name="chevron-left" />
-                    Previous
                 </button>
-                <button class="button button-secondary w-full sm:w-fit">
-                    Next
+                {#each Array($tagList.data.total_pages) as _, idx (idx)}
+                    <button
+                        class="button {idx === $tagList.data.page ? 'button-primary' : 'button-secondary'} w-full sm:w-fit"
+                        on:click={() => {
+                            page = idx;
+                        }}
+                        disabled={idx === $tagList.data.page}>{idx}</button
+                    >
+                {/each}
+                <button
+                    class="button button-secondary w-full sm:w-fit"
+                    on:click={() => {
+                        if ($tagList.isPreviousData && page < $tagList.data.total_pages) {
+                            page = page + 1;
+                        }
+                    }}
+                    disabled={$tagList.isPreviousData || ($tagList.data.total_pages === page)}
+                >
                     <Icon class="h-3 pl-2" style="solid" name="chevron-right" />
                 </button>
             </div>
         </div>
-    </div>
-{:else if $tagList.isError}
-    <span> This is an error </span>
-{/if}
+    {/if}
+</div>
 
 <!-- MODALS -->
 <SelectPathModal bind:isOpened={isOpenedSelectPathModal} {selectedPath} />
