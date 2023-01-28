@@ -7,8 +7,5 @@ export interface Tag {
 
 export interface Tags {
   tags: Array<Tag>;
-  page: number;
-  per_page: number;
   total: number;
-  total_pages: number;
 }

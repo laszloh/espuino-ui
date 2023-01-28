@@ -6,13 +6,15 @@
     import EnterWebStreamUrlModal from "../modals/EnterWebStreamUrl.svelte";
     import SelectActionModal from "../modals/SelectAction.svelte";
     import ConfirmRemoveModal from "../modals/ConfirmRemove.svelte";
+    import { range } from "../helper/range";
     import { useCurrentTag, useTagList } from "../api";
 
     export let show;
 
     let page = 0;
+    const limit = 10;
 
-    $: tagList = useTagList(page);
+    const tagList = useTagList();
     const currentTag = useCurrentTag();
 
     let openedModalId = "";
@@ -145,10 +147,10 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {#each $tagList.data.tags as tag}
+                            {#each range(page * limit, page + 1 * limit, 1) as i}
                                 <tr class="h-full border-zinc-300 border-t">
                                     <td class="pt-2 sm:pb-2 font-mono w-0 select-all">
-                                        {tag.id}
+                                        {$tagList.data.tags[i].id}
                                     </td>
                                     <td class="pt-2 sm:pb-2 pl-5 ">
                                         <!--{tag.command}-->
@@ -162,7 +164,7 @@
                                         </div>
                                     </td>
                                     <td class="pt-2 sm:pb-2 px-5 w-full hidden sm:table-cell text-zinc-500 break-all select-all font-mono text-xs">
-                                        {tag.pathOrUrl}
+                                        {$tagList.data.tags[i].pathOrUrl}
                                     </td>
                                     <td class="pt-2 sm:pb-2 w-0">
                                         <button class="button button-secondary max-h-8 w-12">
@@ -172,7 +174,7 @@
                                 </tr>
                                 <tr class="sm:hidden">
                                     <td colspan="3" class="pb-2">
-                                        <span class="font-medium">Path / URL: </span><span class="text-zinc-500 break-all select-all font-mono text-xs">{tag.pathOrUrl}</span>
+                                        <span class="font-medium">Path / URL: </span><span class="text-zinc-500 break-all select-all font-mono text-xs">{$tagList.data.tags[i].pathOrUrl}</span>
                                     </td>
                                 </tr>
                             {/each}
@@ -192,23 +194,23 @@
                 >
                     <Icon class="h-3 pr-2" style="solid" name="chevron-left" />
                 </button>
-                {#each Array($tagList.data.total_pages) as _, idx (idx)}
+                {#each range(1,$tagList.data.total / limit, 1) as idx}
                     <button
-                        class="button {idx === $tagList.data.page ? 'button-primary' : 'button-secondary'} w-full sm:w-fit"
+                        class="button {idx === page ? 'button-primary' : 'button-secondary'} w-full sm:w-fit"
                         on:click={() => {
                             page = idx;
                         }}
-                        disabled={idx === $tagList.data.page}>{idx}</button
+                        disabled={idx === page}>{idx}</button
                     >
                 {/each}
                 <button
                     class="button button-secondary w-full sm:w-fit"
                     on:click={() => {
-                        if ($tagList.isPreviousData && page < $tagList.data.total_pages) {
+                        if (page < $tagList.data.total / limit) {
                             page = page + 1;
                         }
                     }}
-                    disabled={$tagList.isPreviousData || ($tagList.data.total_pages === page)}
+                    disabled={ ($tagList.data.total / limit) === page}
                 >
                     <Icon class="h-3 pl-2" style="solid" name="chevron-right" />
                 </button>
