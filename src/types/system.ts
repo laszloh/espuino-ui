@@ -34,18 +34,26 @@ export interface Settings {
 }
 
 export enum PlayMode {
-  play = 0,
-  pause,
-  idle,
+  pause = 0,
+  play,
+}
+
+export enum RepeatMode {
+  none = 0,
+  track,
+  playlist,
+  track_n_playlist,
 }
 
 // structure to hold the current player state
 export interface PlayerState {
-  mode: PlayMode;
+  play: PlayMode;
   currentTrackNumber: number;
-  title: string;
+  playlist: string;
   numberofTracks: number;
   volume: number;
+  repeat: RepeatMode;
+  position: number;
 }
 
 export interface SystemState {
@@ -53,4 +61,34 @@ export interface SystemState {
   rssi: number;
   battery: number;
   charging: boolean;
+  info : {
+    version : {
+      espuino: string;
+      git: string;
+      idf: string;
+    }
+    heap: {
+      max: number;
+			free: number;
+			max_alloc: number;
+    }
+    psram: {
+      avaliable: boolean;
+      max: number;
+			free: number;
+			max_alloc: number;
+    }
+    wifi: {
+      ip: string;
+      rssi: number;
+    }
+    hall: {
+      avaliable: boolean;
+			NullFieldValue: number;
+			actual: number;
+			diff: number;
+			LastWaitForState: number;
+			waited: number;
+    }
+  }
 }

@@ -1,8 +1,7 @@
 
 export interface Tag {
   id: string;
-  command: number;
-  pathOrUrl: string;
+  cmd: string;
 }
 
 export interface Tags {
